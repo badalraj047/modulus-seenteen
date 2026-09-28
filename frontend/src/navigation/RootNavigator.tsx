@@ -17,7 +17,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 // match the app's dark color scheme instead of React Navigation's default white.
 const navTheme = {
   ...DefaultTheme,
-  dark: true,
+  dark: false,
   colors: {
     ...DefaultTheme.colors,
     background: colors.background,

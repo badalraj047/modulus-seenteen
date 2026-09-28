@@ -2,27 +2,28 @@
 // can be adjusted from a single file, and screens stay visually consistent.
 
 export const colors = {
-  background: '#0F1220',
-  surface: '#1A1E2E',
-  surfaceElevated: '#232842',
-  primary: '#7C6CF6',
-  primaryDark: '#5B4FD1',
-  accent: '#4ECDC4',
-  danger: '#FF6B6B',
-  success: '#4ECDC4',
-  warning: '#FFB84D',
+  background: '#FFF7F3',
+  surface: '#FFFFFF',
+  surfaceElevated: '#FFF0EA',
+  primary: '#E8503A',
+  primaryDark: '#D14130',
+  accent: '#E88A3A',
+  danger: '#EF4444',
+  success: '#22C55E',
+  warning: '#F59E0B',
 
-  textPrimary: '#F5F6FA',
-  textSecondary: '#9BA0B5',
-  textMuted: '#6B7089',
-  border: '#2C3150',
+  textPrimary: '#1A1A2E',
+  textSecondary: '#6B7280',
+  textMuted: '#9CA3AF',
+  border: '#F0E6E0',
 
-  priorityHigh: '#FF6B6B',
-  priorityMedium: '#FFB84D',
-  priorityLow: '#4ECDC4',
+  priorityHigh: '#E8503A',
+  priorityMedium: '#F59E0B',
+  priorityLow: '#22C55E',
 
   white: '#FFFFFF',
-  overlay: 'rgba(0,0,0,0.55)',
+  dark: '#1A1A2E',
+  overlay: 'rgba(0,0,0,0.25)',
 };
 
 export const spacing = {
@@ -53,11 +54,11 @@ export const typography = {
 
 export const shadow = {
   card: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowColor: '#D4C4BC',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 3,
   },
 };
 

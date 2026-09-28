@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkmark: {
-    color: colors.background,
+    color: colors.white,
     fontSize: 14,
     fontWeight: '900',
   },

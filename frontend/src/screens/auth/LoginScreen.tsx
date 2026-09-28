@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   logo: {
-    fontSize: 40,
+    fontSize: 44,
     color: colors.primary,
     marginBottom: spacing.md,
     fontWeight: '900',

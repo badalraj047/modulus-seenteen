@@ -29,7 +29,7 @@ export default function PrioritySelector({ value, onChange }: Props) {
             onPress={() => onChange(option)}
             activeOpacity={0.8}
           >
-            <Text style={[styles.label, { color: selected ? colors.background : color }]}>
+            <Text style={[styles.label, { color: selected ? colors.white : color }]}>
               {option.charAt(0).toUpperCase() + option.slice(1)}
             </Text>
           </TouchableOpacity>

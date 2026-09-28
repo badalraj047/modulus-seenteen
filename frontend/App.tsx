@@ -30,7 +30,7 @@ function App() {
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <StatusBar barStyle="light-content" />
+        <StatusBar barStyle="dark-content" />
         <TaskProvider>
           <TaskResetBridge>
             <RootNavigator />
