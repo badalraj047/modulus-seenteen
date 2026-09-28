@@ -7,6 +7,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Pressable,
+  StatusBar,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Priority } from '../../types';
@@ -15,7 +17,7 @@ import AppTextInput from '../../components/AppTextInput';
 import AppButton from '../../components/AppButton';
 import PrioritySelector from '../../components/PrioritySelector';
 import DateTimeField from '../../components/DateTimeField';
-import { colors, spacing, typography } from '../../theme/theme';
+import { colors, radius, spacing, typography } from '../../theme/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'TaskForm'>;
 
@@ -107,7 +109,16 @@ export default function TaskFormScreen({ navigation, route }: Props) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <Text style={styles.heading}>{isEditing ? 'Edit Task' : 'New Task'}</Text>
+        <View style={styles.formHeader}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={styles.backBtn}
+            hitSlop={12}
+          >
+            <Text style={styles.backArrow}>←</Text>
+          </Pressable>
+          <Text style={styles.heading}>{isEditing ? 'Edit Task' : 'New Task'}</Text>
+        </View>
 
         <AppTextInput
           label="Title"
@@ -167,11 +178,31 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: spacing.lg,
+    paddingTop: (StatusBar.currentHeight ?? 0) + spacing.md,
+  },
+  formHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    backgroundColor: colors.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  backArrow: {
+    fontSize: 20,
+    color: colors.textPrimary,
+    fontWeight: '600',
+    marginTop: -1,
   },
   heading: {
     ...typography.h2,
     color: colors.textPrimary,
-    marginBottom: spacing.lg,
   },
   textArea: {
     minHeight: 80,

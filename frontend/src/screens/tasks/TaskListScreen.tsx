@@ -103,6 +103,7 @@ export default function TaskListScreen({ navigation }: Props) {
       </View>
 
       <View style={styles.searchContainer}>
+        <Text style={styles.searchIcon}>🔍</Text>
         <TextInput
           style={styles.searchInput}
           placeholder="Search tasks..."
@@ -144,14 +145,22 @@ export default function TaskListScreen({ navigation }: Props) {
         ListEmptyComponent={
           !isLoading ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>📝</Text>
+              <Text style={styles.emptyIcon}>
+                {searchQuery.trim() ? '🔍' : '📝'}
+              </Text>
               <Text style={styles.emptyTitle}>
-                {filter === 'completed' ? 'No completed tasks yet' : 'No tasks yet'}
+                {searchQuery.trim()
+                  ? 'No matching tasks'
+                  : filter === 'completed'
+                    ? 'No completed tasks yet'
+                    : 'No tasks yet'}
               </Text>
               <Text style={styles.emptySubtitle}>
-                {filter === 'completed'
-                  ? 'Finish a task to see it here'
-                  : 'Tap the + button to add your first task'}
+                {searchQuery.trim()
+                  ? `No tasks found for "${searchQuery.trim()}"`
+                  : filter === 'completed'
+                    ? 'Finish a task to see it here'
+                    : 'Tap the + button to add your first task'}
               </Text>
             </View>
           ) : undefined
@@ -232,6 +241,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  searchIcon: {
+    fontSize: 14,
+    marginRight: spacing.sm,
+    opacity: 0.5,
+  },
   searchInput: {
     flex: 1,
     ...typography.body,
@@ -255,6 +269,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: spacing.xxl,
+    paddingBottom: 120,
   },
   emptyIcon: {
     fontSize: 48,
@@ -273,7 +288,7 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: spacing.lg,
-    bottom: spacing.xl,
+    bottom: spacing.xxl,
     width: 58,
     height: 58,
     borderRadius: radius.full,
