@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
 import { Task } from '../types';
 import { colors, radius, spacing, typography, priorityColor, shadow } from '../theme/theme';
 import { formatShortDate, timeUntil, isOverdue } from '../utils/date';
@@ -8,36 +8,65 @@ interface Props {
   task: Task;
   onToggle: () => void;
   onPress: () => void;
-  onDelete: () => void;
+  showCountdown?: boolean;
 }
 
-// A single task row: checkbox, title/description, and metadata chips for
-// priority, deadline countdown, and overdue warning.
-export default function TaskCard({ task, onToggle, onPress, onDelete }: Props) {
+export default function TaskCard({ task, onToggle, onPress, showCountdown = true }: Props) {
   const overdue = !task.completed && isOverdue(task.deadline);
   const pColor = priorityColor(task.priority);
 
+  const anim = useRef(new Animated.Value(task.completed ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: task.completed ? 1 : 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [task.completed, anim]);
+
+  const titleOpacity = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0.5],
+  });
+
+  const titleColor = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [colors.textPrimary, colors.textMuted],
+  });
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
-      <TouchableOpacity
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      onPress={onPress}
+      android_ripple={{ color: colors.border, borderless: false }}
+    >
+      <Pressable
         onPress={onToggle}
         style={[
           styles.checkbox,
           { borderColor: pColor },
           task.completed && { backgroundColor: pColor },
         ]}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        hitSlop={10}
       >
         {task.completed && <Text style={styles.checkmark}>✓</Text>}
-      </TouchableOpacity>
+      </Pressable>
 
       <View style={styles.content}>
-        <Text
-          style={[styles.title, task.completed && styles.titleCompleted]}
+        <Animated.Text
+          style={[
+            styles.title,
+            {
+              opacity: titleOpacity,
+              color: titleColor,
+            },
+            task.completed && styles.titleCompleted,
+          ]}
           numberOfLines={1}
         >
           {task.title}
-        </Text>
+        </Animated.Text>
 
         {task.description ? (
           <Text style={styles.description} numberOfLines={2}>
@@ -54,22 +83,14 @@ export default function TaskCard({ task, onToggle, onPress, onDelete }: Props) {
 
           <Text style={styles.metaText}>{formatShortDate(task.deadline)}</Text>
 
-          {!task.completed && (
+          {showCountdown && !task.completed && (
             <Text style={[styles.metaText, overdue && styles.overdueText]}>
               {timeUntil(task.deadline)}
             </Text>
           )}
         </View>
       </View>
-
-      <TouchableOpacity
-        onPress={onDelete}
-        style={styles.deleteBtn}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Text style={styles.deleteIcon}>✕</Text>
-      </TouchableOpacity>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -82,6 +103,9 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
     ...shadow.card,
+  },
+  cardPressed: {
+    opacity: 0.92,
   },
   checkbox: {
     width: 26,
@@ -108,7 +132,6 @@ const styles = StyleSheet.create({
   },
   titleCompleted: {
     textDecorationLine: 'line-through',
-    color: colors.textMuted,
   },
   description: {
     ...typography.caption,
@@ -137,15 +160,6 @@ const styles = StyleSheet.create({
   },
   overdueText: {
     color: colors.danger,
-    fontWeight: '700',
-  },
-  deleteBtn: {
-    padding: spacing.xs,
-    marginLeft: spacing.sm,
-  },
-  deleteIcon: {
-    color: colors.textMuted,
-    fontSize: 16,
     fontWeight: '700',
   },
 });

@@ -2,16 +2,18 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
+  TextInput,
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
   RefreshControl,
   Alert,
   StatusBar,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
-import { RootStackParamList, Task, SortOption } from '../../types';
+import { RootStackParamList, SortOption } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTasks } from '../../context/TaskContext';
 import TaskCard from '../../components/TaskCard';
@@ -22,13 +24,14 @@ type Props = NativeStackScreenProps<RootStackParamList, 'TaskList'>;
 
 export default function TaskListScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
-  const { tasks, isLoading, error, loadTasks, toggleTask, removeTask, sortBy, setSortBy } =
+  const { tasks, isLoading, error, loadTasks, toggleTask, sortBy, setSortBy } =
     useTasks();
 
   const [filter, setFilter] = useState<FilterOption>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [showCountdown, setShowCountdown] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Reload whenever the screen gains focus (e.g. returning from add/edit) or sort changes.
   useFocusEffect(
     useCallback(() => {
       loadTasks(sortBy);
@@ -52,17 +55,6 @@ export default function TaskListScreen({ navigation }: Props) {
     setSortBy(s);
   };
 
-  const handleDelete = (task: Task) => {
-    Alert.alert('Delete Task', `Delete "${task.title}"? This cannot be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => removeTask(task._id).catch(() => {}),
-      },
-    ]);
-  };
-
   const handleLogout = () => {
     Alert.alert('Log Out', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
@@ -71,10 +63,15 @@ export default function TaskListScreen({ navigation }: Props) {
   };
 
   const filteredTasks = useMemo(() => {
-    if (filter === 'active') return tasks.filter((t) => !t.completed);
-    if (filter === 'completed') return tasks.filter((t) => t.completed);
-    return tasks;
-  }, [tasks, filter]);
+    let result = tasks;
+    if (filter === 'active') result = result.filter((t) => !t.completed);
+    if (filter === 'completed') result = result.filter((t) => t.completed);
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((t) => t.title.toLowerCase().includes(q));
+    }
+    return result;
+  }, [tasks, filter, searchQuery]);
 
   const activeCount = tasks.filter((t) => !t.completed).length;
 
@@ -89,9 +86,37 @@ export default function TaskListScreen({ navigation }: Props) {
             {activeCount} task{activeCount === 1 ? '' : 's'} pending
           </Text>
         </View>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-          <Text style={styles.logoutText}>Log Out</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            onPress={() => setShowCountdown((v) => !v)}
+            style={styles.countdownToggle}
+          >
+            <Text style={styles.countdownIcon}>⏱</Text>
+            <Text style={[styles.countdownLabel, !showCountdown && styles.countdownOff]}>
+              {showCountdown ? 'ON' : 'OFF'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
+            <Text style={styles.logoutText}>Log Out</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search tasks..."
+          placeholderTextColor={colors.textMuted}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          returnKeyType="search"
+          clearButtonMode="while-editing"
+        />
+        {searchQuery.length > 0 && (
+          <Pressable onPress={() => setSearchQuery('')} style={styles.clearBtn} hitSlop={8}>
+            <Text style={styles.clearBtnText}>✕</Text>
+          </Pressable>
+        )}
       </View>
 
       <FilterSortBar
@@ -113,7 +138,7 @@ export default function TaskListScreen({ navigation }: Props) {
             task={item}
             onToggle={() => toggleTask(item._id).catch(() => {})}
             onPress={() => navigation.navigate('TaskForm', { taskId: item._id })}
-            onDelete={() => handleDelete(item)}
+            showCountdown={showCountdown}
           />
         )}
         ListEmptyComponent={
@@ -133,13 +158,12 @@ export default function TaskListScreen({ navigation }: Props) {
         }
       />
 
-      <TouchableOpacity
-        style={styles.fab}
+      <Pressable
+        style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
         onPress={() => navigation.navigate('TaskForm', undefined)}
-        activeOpacity={0.85}
       >
         <Text style={styles.fabIcon}>+</Text>
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 }
@@ -159,6 +183,11 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
   greeting: {
     ...typography.h2,
     color: colors.textPrimary,
@@ -168,6 +197,22 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
+  countdownToggle: {
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+  },
+  countdownIcon: {
+    fontSize: 16,
+  },
+  countdownLabel: {
+    ...typography.small,
+    color: colors.primary,
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  countdownOff: {
+    color: colors.textMuted,
+  },
   logoutBtn: {
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
@@ -175,6 +220,30 @@ const styles = StyleSheet.create({
   logoutText: {
     ...typography.caption,
     color: colors.danger,
+    fontWeight: '600',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    ...typography.body,
+    color: colors.textPrimary,
+    paddingVertical: spacing.sm,
+  },
+  clearBtn: {
+    padding: spacing.xs,
+  },
+  clearBtnText: {
+    color: colors.textMuted,
+    fontSize: 16,
     fontWeight: '600',
   },
   listContent: {
@@ -212,6 +281,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...shadow.card,
+  },
+  fabPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.95 }],
   },
   fabIcon: {
     fontSize: 30,

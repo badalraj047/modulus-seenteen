@@ -8,6 +8,7 @@ import {
   deleteTaskRequest,
 } from '../api/tasks';
 import { ApiError } from '../api/client';
+import { cacheTasks, getCachedTasks } from '../api/storage';
 
 interface TaskState {
   tasks: Task[];
@@ -94,13 +95,22 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
   const loadTasks = useCallback(
     async (sortBy?: SortOption) => {
       dispatch({ type: 'LOAD_START' });
+      const effectiveSort = sortBy ?? state.sortBy;
+
+      const cached = await getCachedTasks();
+      if (cached && cached.length > 0) {
+        dispatch({ type: 'LOAD_SUCCESS', tasks: cached });
+      }
+
       try {
-        const effectiveSort = sortBy ?? state.sortBy;
         const tasks = await fetchTasks(effectiveSort);
         dispatch({ type: 'LOAD_SUCCESS', tasks });
+        cacheTasks(tasks);
       } catch (err) {
-        const message = err instanceof ApiError ? err.message : 'Failed to load tasks';
-        dispatch({ type: 'LOAD_ERROR', error: message });
+        if (!cached || cached.length === 0) {
+          const message = err instanceof ApiError ? err.message : 'Failed to load tasks';
+          dispatch({ type: 'LOAD_ERROR', error: message });
+        }
       }
     },
     [state.sortBy]
@@ -111,48 +121,52 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     try {
       const task = await createTaskRequest(input);
       dispatch({ type: 'ADD_TASK', task });
+      const updated = [task, ...state.tasks];
+      cacheTasks(updated);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Failed to create task';
       dispatch({ type: 'MUTATE_ERROR', error: message });
       throw err;
     }
-  }, []);
+  }, [state.tasks]);
 
   const editTask = useCallback(async (id: string, input: Partial<TaskInput>) => {
     dispatch({ type: 'MUTATE_START' });
     try {
       const task = await updateTaskRequest(id, input);
       dispatch({ type: 'UPDATE_TASK', task });
+      cacheTasks(state.tasks.map((t) => (t._id === task._id ? task : t)));
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Failed to update task';
       dispatch({ type: 'MUTATE_ERROR', error: message });
       throw err;
     }
-  }, []);
+  }, [state.tasks]);
 
   const toggleTask = useCallback(async (id: string) => {
-    // Optimistic-ish: we still await the server, but keep it snappy since it's a single field flip.
     try {
       const task = await toggleTaskRequest(id);
       dispatch({ type: 'UPDATE_TASK', task });
+      cacheTasks(state.tasks.map((t) => (t._id === task._id ? task : t)));
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Failed to update task';
       dispatch({ type: 'MUTATE_ERROR', error: message });
       throw err;
     }
-  }, []);
+  }, [state.tasks]);
 
   const removeTask = useCallback(async (id: string) => {
     dispatch({ type: 'MUTATE_START' });
     try {
       await deleteTaskRequest(id);
       dispatch({ type: 'REMOVE_TASK', id });
+      cacheTasks(state.tasks.filter((t) => t._id !== id));
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Failed to delete task';
       dispatch({ type: 'MUTATE_ERROR', error: message });
       throw err;
     }
-  }, []);
+  }, [state.tasks]);
 
   const setSortBy = useCallback((sortBy: SortOption) => {
     dispatch({ type: 'SET_SORT', sortBy });
