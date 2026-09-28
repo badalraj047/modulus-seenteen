@@ -17,7 +17,29 @@ todo-app/
 
 ---
 
-## 1. Backend Setup
+## Quick Start (no backend setup needed)
+
+The backend is already deployed on Render and the app points to it by default, so you only need to run the mobile app:
+
+```bash
+cd frontend
+npm install
+npm start          # terminal 1: Metro bundler
+npm run android    # terminal 2: build & launch on emulator/device
+```
+
+**Live API:** https://todo-api-yzxs.onrender.com/api/health
+
+> **Note:** The backend is on Render's free tier and sleeps after ~15 minutes of inactivity.
+> The **first request after a pause (register/login) can take 30-60 seconds** while the server wakes up. This is normal, please wait; later requests are fast.
+
+Requirements: Node.js 18+, JDK 17, Android Studio (SDK + emulator) or an Android phone with USB debugging. Setup guide: https://reactnative.dev/docs/set-up-your-environment (choose **React Native CLI** and **Android**).
+
+To run the backend yourself instead, see the next section.
+
+---
+
+## 1. Backend Setup (optional - only to run locally)
 
 ```bash
 cd backend
@@ -82,15 +104,16 @@ npm install
 
 ### Point the app at your backend
 
-Open `src/api/config.ts`:
+Open `src/api/config.ts`. By default it uses the deployed backend:
 
 ```ts
-export const API_BASE_URL = 'http://10.0.2.2:5000/api';
+export const API_BASE_URL = 'https://todo-api-yzxs.onrender.com/api';
 ```
 
-- **Android emulator** (default, already set): `10.0.2.2` is the special alias emulators use to reach your computer's `localhost`. No change needed if you're running the backend on the same machine as the emulator.
-- **Physical Android device:** replace `10.0.2.2` with your computer's LAN IP address (e.g. `http://192.168.1.5:5000/api`). Find it with `ipconfig` (Windows) or `ifconfig`/`ip addr` (Mac/Linux). Your phone and computer must be on the same Wi-Fi network.
-- **Deployed backend:** paste the public URL (e.g. Render/Railway) instead.
+To use a **local** backend instead (after following the Backend Setup above), change it to:
+
+- **Android emulator:** `http://10.0.2.2:5000/api` (`10.0.2.2` is the emulator's alias for your computer's localhost)
+- **Physical Android device:** `http://<your-computer-LAN-IP>:5000/api` (find the IP with `ipconfig` on Windows or `ifconfig` on Mac/Linux; phone and computer must be on the same Wi-Fi)
 
 ### Run the app
 
@@ -130,6 +153,7 @@ This installs a debug build on your running emulator/connected device.
 
 ## Troubleshooting
 
+- **First login/register is very slow (30-60s)** — the free-tier Render backend was asleep and is waking up. Wait and retry once; it is fast afterwards.
 - **"Could not reach the server"** — confirm the backend is running and `API_BASE_URL` in `src/api/config.ts` matches how your device/emulator can reach your computer (see above).
 - **MongoDB connection error on backend startup** — check `MONGO_URI` in `backend/.env` and that MongoDB is actually running.
 - **Gradle/Android build issues** — make sure `ANDROID_HOME` and `JAVA_HOME` are set correctly per the official React Native environment setup guide linked above.

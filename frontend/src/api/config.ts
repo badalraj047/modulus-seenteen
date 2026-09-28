@@ -1,4 +1,4 @@
-﻿// Base URL for the backend API.
+// Base URL for the backend API.
 //
 // The backend is deployed on Render (free tier), so the app works on any
 // device or emulator without running a local server.
