@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
+  TextInput,
   FlatList,
   StyleSheet,
   TouchableOpacity,
@@ -29,6 +30,7 @@ export default function TaskListScreen({ navigation }: Props) {
   const [filter, setFilter] = useState<FilterOption>('all');
   const [refreshing, setRefreshing] = useState(false);
   const [showCountdown, setShowCountdown] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -61,10 +63,15 @@ export default function TaskListScreen({ navigation }: Props) {
   };
 
   const filteredTasks = useMemo(() => {
-    if (filter === 'active') return tasks.filter((t) => !t.completed);
-    if (filter === 'completed') return tasks.filter((t) => t.completed);
-    return tasks;
-  }, [tasks, filter]);
+    let result = tasks;
+    if (filter === 'active') result = result.filter((t) => !t.completed);
+    if (filter === 'completed') result = result.filter((t) => t.completed);
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((t) => t.title.toLowerCase().includes(q));
+    }
+    return result;
+  }, [tasks, filter, searchQuery]);
 
   const activeCount = tasks.filter((t) => !t.completed).length;
 
@@ -84,7 +91,7 @@ export default function TaskListScreen({ navigation }: Props) {
             onPress={() => setShowCountdown((v) => !v)}
             style={styles.countdownToggle}
           >
-            <Text style={styles.countdownIcon}>{showCountdown ? '⏱' : '⏱'}</Text>
+            <Text style={styles.countdownIcon}>⏱</Text>
             <Text style={[styles.countdownLabel, !showCountdown && styles.countdownOff]}>
               {showCountdown ? 'ON' : 'OFF'}
             </Text>
@@ -93,6 +100,23 @@ export default function TaskListScreen({ navigation }: Props) {
             <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
         </View>
+      </View>
+
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search tasks..."
+          placeholderTextColor={colors.textMuted}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          returnKeyType="search"
+          clearButtonMode="while-editing"
+        />
+        {searchQuery.length > 0 && (
+          <Pressable onPress={() => setSearchQuery('')} style={styles.clearBtn} hitSlop={8}>
+            <Text style={styles.clearBtnText}>✕</Text>
+          </Pressable>
+        )}
       </View>
 
       <FilterSortBar
@@ -196,6 +220,30 @@ const styles = StyleSheet.create({
   logoutText: {
     ...typography.caption,
     color: colors.danger,
+    fontWeight: '600',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    ...typography.body,
+    color: colors.textPrimary,
+    paddingVertical: spacing.sm,
+  },
+  clearBtn: {
+    padding: spacing.xs,
+  },
+  clearBtnText: {
+    color: colors.textMuted,
+    fontSize: 16,
     fontWeight: '600',
   },
   listContent: {

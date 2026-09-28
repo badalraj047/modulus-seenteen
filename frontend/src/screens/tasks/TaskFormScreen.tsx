@@ -147,7 +147,6 @@ export default function TaskFormScreen({ navigation, route }: Props) {
           loading={isMutating}
           style={styles.saveBtn}
         />
-
         {isEditing && (
           <AppButton
             title="Delete Task"

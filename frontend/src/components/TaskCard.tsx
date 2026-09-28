@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, Pressable, StyleSheet, Animated } from 'react-native';
 import { Task } from '../types';
 import { colors, radius, spacing, typography, priorityColor, shadow } from '../theme/theme';
 import { formatShortDate, timeUntil, isOverdue } from '../utils/date';
@@ -14,6 +14,26 @@ interface Props {
 export default function TaskCard({ task, onToggle, onPress, showCountdown = true }: Props) {
   const overdue = !task.completed && isOverdue(task.deadline);
   const pColor = priorityColor(task.priority);
+
+  const anim = useRef(new Animated.Value(task.completed ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: task.completed ? 1 : 0,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [task.completed, anim]);
+
+  const titleOpacity = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0.5],
+  });
+
+  const titleColor = anim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [colors.textPrimary, colors.textMuted],
+  });
 
   return (
     <Pressable
@@ -34,12 +54,19 @@ export default function TaskCard({ task, onToggle, onPress, showCountdown = true
       </Pressable>
 
       <View style={styles.content}>
-        <Text
-          style={[styles.title, task.completed && styles.titleCompleted]}
+        <Animated.Text
+          style={[
+            styles.title,
+            {
+              opacity: titleOpacity,
+              color: titleColor,
+            },
+            task.completed && styles.titleCompleted,
+          ]}
           numberOfLines={1}
         >
           {task.title}
-        </Text>
+        </Animated.Text>
 
         {task.description ? (
           <Text style={styles.description} numberOfLines={2}>
@@ -105,7 +132,6 @@ const styles = StyleSheet.create({
   },
   titleCompleted: {
     textDecorationLine: 'line-through',
-    color: colors.textMuted,
   },
   description: {
     ...typography.caption,

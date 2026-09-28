@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { User } from '../types';
+import { User, Task } from '../types';
 
-// Keys used in AsyncStorage. Namespacing avoids collisions with any other stored data.
 const TOKEN_KEY = '@todo_app/token';
 const USER_KEY = '@todo_app/user';
+const TASKS_CACHE_KEY = '@todo_app/tasks_cache';
 
 export async function saveSession(token: string, user: User): Promise<void> {
   await AsyncStorage.multiSet([
@@ -23,4 +23,19 @@ export async function getStoredUser(): Promise<User | null> {
 
 export async function clearSession(): Promise<void> {
   await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
+}
+
+export async function cacheTasks(tasks: Task[]): Promise<void> {
+  try {
+    await AsyncStorage.setItem(TASKS_CACHE_KEY, JSON.stringify(tasks));
+  } catch {}
+}
+
+export async function getCachedTasks(): Promise<Task[] | null> {
+  try {
+    const raw = await AsyncStorage.getItem(TASKS_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as Task[]) : null;
+  } catch {
+    return null;
+  }
 }
