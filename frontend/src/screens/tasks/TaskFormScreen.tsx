@@ -26,7 +26,7 @@ interface FormErrors {
 
 export default function TaskFormScreen({ navigation, route }: Props) {
   const taskId = route.params?.taskId;
-  const { tasks, addTask, editTask, isMutating } = useTasks();
+  const { tasks, addTask, editTask, removeTask, isMutating } = useTasks();
 
   const existingTask = useMemo(
     () => (taskId ? tasks.find((t) => t._id === taskId) : undefined),
@@ -82,6 +82,25 @@ export default function TaskFormScreen({ navigation, route }: Props) {
     }
   };
 
+  const handleDelete = () => {
+    if (!existingTask) return;
+    Alert.alert('Delete Task', `Delete "${existingTask.title}"? This cannot be undone.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await removeTask(existingTask._id);
+            navigation.goBack();
+          } catch {
+            Alert.alert('Error', 'Failed to delete task');
+          }
+        },
+      },
+    ]);
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.flex}
@@ -128,6 +147,16 @@ export default function TaskFormScreen({ navigation, route }: Props) {
           loading={isMutating}
           style={styles.saveBtn}
         />
+
+        {isEditing && (
+          <AppButton
+            title="Delete Task"
+            onPress={handleDelete}
+            variant="danger"
+            style={styles.deleteBtn}
+          />
+        )}
+
         <AppButton title="Cancel" onPress={() => navigation.goBack()} variant="ghost" />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -161,6 +190,9 @@ const styles = StyleSheet.create({
   },
   saveBtn: {
     marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  deleteBtn: {
     marginBottom: spacing.md,
   },
 });

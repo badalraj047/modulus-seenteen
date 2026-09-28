@@ -5,13 +5,14 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
   RefreshControl,
   Alert,
   StatusBar,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
-import { RootStackParamList, Task, SortOption } from '../../types';
+import { RootStackParamList, SortOption } from '../../types';
 import { useAuth } from '../../context/AuthContext';
 import { useTasks } from '../../context/TaskContext';
 import TaskCard from '../../components/TaskCard';
@@ -22,13 +23,13 @@ type Props = NativeStackScreenProps<RootStackParamList, 'TaskList'>;
 
 export default function TaskListScreen({ navigation }: Props) {
   const { user, logout } = useAuth();
-  const { tasks, isLoading, error, loadTasks, toggleTask, removeTask, sortBy, setSortBy } =
+  const { tasks, isLoading, error, loadTasks, toggleTask, sortBy, setSortBy } =
     useTasks();
 
   const [filter, setFilter] = useState<FilterOption>('all');
   const [refreshing, setRefreshing] = useState(false);
+  const [showCountdown, setShowCountdown] = useState(true);
 
-  // Reload whenever the screen gains focus (e.g. returning from add/edit) or sort changes.
   useFocusEffect(
     useCallback(() => {
       loadTasks(sortBy);
@@ -50,17 +51,6 @@ export default function TaskListScreen({ navigation }: Props) {
 
   const handleSortChange = (s: SortOption) => {
     setSortBy(s);
-  };
-
-  const handleDelete = (task: Task) => {
-    Alert.alert('Delete Task', `Delete "${task.title}"? This cannot be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => removeTask(task._id).catch(() => {}),
-      },
-    ]);
   };
 
   const handleLogout = () => {
@@ -89,9 +79,20 @@ export default function TaskListScreen({ navigation }: Props) {
             {activeCount} task{activeCount === 1 ? '' : 's'} pending
           </Text>
         </View>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-          <Text style={styles.logoutText}>Log Out</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            onPress={() => setShowCountdown((v) => !v)}
+            style={styles.countdownToggle}
+          >
+            <Text style={styles.countdownIcon}>{showCountdown ? '⏱' : '⏱'}</Text>
+            <Text style={[styles.countdownLabel, !showCountdown && styles.countdownOff]}>
+              {showCountdown ? 'ON' : 'OFF'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
+            <Text style={styles.logoutText}>Log Out</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <FilterSortBar
@@ -113,7 +114,7 @@ export default function TaskListScreen({ navigation }: Props) {
             task={item}
             onToggle={() => toggleTask(item._id).catch(() => {})}
             onPress={() => navigation.navigate('TaskForm', { taskId: item._id })}
-            onDelete={() => handleDelete(item)}
+            showCountdown={showCountdown}
           />
         )}
         ListEmptyComponent={
@@ -133,13 +134,12 @@ export default function TaskListScreen({ navigation }: Props) {
         }
       />
 
-      <TouchableOpacity
-        style={styles.fab}
+      <Pressable
+        style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
         onPress={() => navigation.navigate('TaskForm', undefined)}
-        activeOpacity={0.85}
       >
         <Text style={styles.fabIcon}>+</Text>
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 }
@@ -159,6 +159,11 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
   greeting: {
     ...typography.h2,
     color: colors.textPrimary,
@@ -167,6 +172,22 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSecondary,
     marginTop: 2,
+  },
+  countdownToggle: {
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+  },
+  countdownIcon: {
+    fontSize: 16,
+  },
+  countdownLabel: {
+    ...typography.small,
+    color: colors.primary,
+    fontWeight: '700',
+    marginTop: 1,
+  },
+  countdownOff: {
+    color: colors.textMuted,
   },
   logoutBtn: {
     paddingVertical: spacing.xs,
@@ -212,6 +233,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...shadow.card,
+  },
+  fabPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.95 }],
   },
   fabIcon: {
     fontSize: 30,
