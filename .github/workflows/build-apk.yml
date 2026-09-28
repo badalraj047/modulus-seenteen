@@ -33,19 +33,25 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      # GitHub's ubuntu-latest image already ships with the Android SDK, so we
-      # only point ANDROID_HOME at it and install the exact SDK pieces this
-      # project's android/build.gradle asks for (compileSdk 37, build-tools 37,
-      # NDK 27.1.12297006).
+      # GitHub's ubuntu-latest image already ships with the Android SDK.
+      # This step points ANDROID_HOME at it, lists which platform / build-tools
+      # / NDK packages the SDK manager actually offers (so a failure is easy
+      # to diagnose), then installs the versions android/build.gradle asks for.
       - name: Install required Android SDK packages
         run: |
           echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> "$GITHUB_ENV"
-          SDKMANAGER=/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager
-          if [ ! -x "$SDKMANAGER" ]; then
-            SDKMANAGER=$(ls /usr/local/lib/android/sdk/cmdline-tools/*/bin/sdkmanager | head -n 1)
-          fi
+          SDKMANAGER=$(ls /usr/local/lib/android/sdk/cmdline-tools/*/bin/sdkmanager | head -n 1)
+          echo "Using sdkmanager: $SDKMANAGER"
+          set +o pipefail
           yes | "$SDKMANAGER" --licenses > /dev/null || true
-          "$SDKMANAGER" "platforms;android-37" "build-tools;37.0.0" "ndk;27.1.12297006"
+          echo "=== Available platforms (newest) ==="
+          "$SDKMANAGER" --list 2>/dev/null | grep -E "^\s+platforms;android-" | tail -8 || true
+          echo "=== Available build-tools (newest) ==="
+          "$SDKMANAGER" --list 2>/dev/null | grep -E "^\s+build-tools;" | tail -5 || true
+          echo "=== Available NDK 27.1 ==="
+          "$SDKMANAGER" --list 2>/dev/null | grep -E "ndk;27\.1" || true
+          "$SDKMANAGER" "platforms;android-37.0" "build-tools;37.0.0" "ndk;27.1.12297006" \
+            || "$SDKMANAGER" "platforms;android-37" "build-tools;37.0.0" "ndk;27.1.12297006"
 
       - name: Install dependencies
         run: npm ci
