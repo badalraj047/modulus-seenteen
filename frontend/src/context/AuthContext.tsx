@@ -15,6 +15,7 @@ type AuthAction =
   | { type: 'BOOT_COMPLETE'; user: User | null }
   | { type: 'SUBMIT_START' }
   | { type: 'SUBMIT_SUCCESS'; user: User }
+  | { type: 'SUBMIT_DONE' }
   | { type: 'SUBMIT_ERROR'; error: string }
   | { type: 'LOGOUT' }
   | { type: 'CLEAR_ERROR' };
@@ -34,6 +35,8 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
       return { ...state, isSubmitting: true, error: null };
     case 'SUBMIT_SUCCESS':
       return { ...state, isSubmitting: false, user: action.user, error: null };
+    case 'SUBMIT_DONE':
+      return { ...state, isSubmitting: false, error: null };
     case 'SUBMIT_ERROR':
       return { ...state, isSubmitting: false, error: action.error };
     case 'LOGOUT':
@@ -90,10 +93,8 @@ export function AuthProvider({
   const register = useCallback(async (name: string, email: string, password: string) => {
     dispatch({ type: 'SUBMIT_START' });
     try {
-      const res = await registerRequest(name, email, password);
-      const user: User = { _id: res._id, name: res.name, email: res.email };
-      await saveSession(res.token, user);
-      dispatch({ type: 'SUBMIT_SUCCESS', user });
+      await registerRequest(name, email, password);
+      dispatch({ type: 'SUBMIT_DONE' });
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : 'Registration failed. Please try again.';

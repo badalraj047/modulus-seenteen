@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  StatusBar,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
@@ -77,10 +78,12 @@ export default function TaskListScreen({ navigation }: Props) {
 
   const activeCount = tasks.filter((t) => !t.completed).length;
 
+  const statusBarHeight = StatusBar.currentHeight ?? 0;
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: statusBarHeight + spacing.md }]}>
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerLeft}>
           <Text style={styles.greeting}>Hi, {user?.name?.split(' ')[0]} 👋</Text>
           <Text style={styles.subGreeting}>
             {activeCount} task{activeCount === 1 ? '' : 's'} pending
@@ -146,13 +149,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: spacing.md,
+  },
+  headerLeft: {
+    flex: 1,
   },
   greeting: {
     ...typography.h2,
@@ -177,9 +182,10 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   emptyState: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: spacing.xxl * 1.5,
+    paddingTop: spacing.xxl,
   },
   emptyIcon: {
     fontSize: 48,

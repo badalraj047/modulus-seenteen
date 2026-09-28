@@ -50,6 +50,11 @@ export default function RegisterScreen({ navigation }: Props) {
     if (!validate()) return;
     try {
       await register(name.trim(), email.trim(), password);
+      Alert.alert(
+        'Account Created',
+        'Registration successful! Please log in with your credentials.',
+        [{ text: 'Go to Login', onPress: () => navigation.navigate('Login') }],
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Registration failed';
       Alert.alert('Registration failed', message);
